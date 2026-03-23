@@ -89,7 +89,6 @@ def insert_memory(
             "INSERT INTO memories_vec(id, embedding) VALUES (?, ?)",
             (row_id, serialize_float32(embedding)),
         )
-    conn.commit()
 
 
 def get_last_chunk_index(conn: sqlite3.Connection, session_id: str) -> int:
@@ -107,4 +106,3 @@ def update_ingest_state(conn: sqlite3.Connection, session_id: str, last_chunk_in
            ON CONFLICT(session_id) DO UPDATE SET last_chunk_index = excluded.last_chunk_index""",
         (session_id, last_chunk_index),
     )
-    conn.commit()

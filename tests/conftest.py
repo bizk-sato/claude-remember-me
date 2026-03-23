@@ -40,4 +40,5 @@ def populated_db(db_conn):
             project_path=path,
             embedding=embedding,
         )
+    db_conn.commit()
     return db_conn

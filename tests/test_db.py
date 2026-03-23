@@ -25,6 +25,7 @@ def test_insert_memory(db_conn):
         project_path="/tmp/project",
         embedding=embedding,
     )
+    db_conn.commit()
     row = db_conn.execute("SELECT * FROM memories WHERE session_id='sess-1'").fetchone()
     assert row is not None
 
@@ -42,6 +43,7 @@ def test_insert_duplicate_is_ignored(db_conn):
             project_path=None,
             embedding=embedding,
         )
+        db_conn.commit()
     count = db_conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
     assert count == 1
 
@@ -54,6 +56,8 @@ def test_get_last_chunk_index_returns_negative_one_for_new_session(db_conn):
 def test_update_and_get_ingest_state(db_conn):
     init_db(db_conn)
     update_ingest_state(db_conn, "sess-1", 5)
+    db_conn.commit()
     assert get_last_chunk_index(db_conn, "sess-1") == 5
     update_ingest_state(db_conn, "sess-1", 10)
+    db_conn.commit()
     assert get_last_chunk_index(db_conn, "sess-1") == 10

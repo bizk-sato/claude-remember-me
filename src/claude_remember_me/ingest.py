@@ -61,6 +61,7 @@ def run_ingest(
         )
 
     update_ingest_state(conn, session_id, new_pairs[-1].chunk_index)
+    conn.commit()  # single commit for the whole batch
     return len(new_pairs)
 
 
