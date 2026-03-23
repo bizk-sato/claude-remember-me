@@ -19,7 +19,7 @@ def test_vec_search_returns_results(populated_db):
 
 
 def test_hybrid_search_returns_scored_results(populated_db):
-    from claude_remember_me.search import rrf_fusion, apply_time_decay
+    from claude_remember_me.ranking import apply_time_decay, rrf_fusion
     from datetime import datetime, timedelta
 
     fts_results = [
