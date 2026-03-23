@@ -70,6 +70,10 @@ def parse_transcript(jsonl_text: str) -> list[QAPair]:
             text = _extract_text(message.get("content", ""))
             if not text:
                 continue
+            # Skip system-like messages (skill prompts, hook outputs, etc.)
+            user_type = obj.get("userType")
+            if user_type is not None and user_type != "external":
+                continue
             # 新しいユーザーメッセージが来たら、前の Q&A ペアを flush
             _flush()
             current_user = text
