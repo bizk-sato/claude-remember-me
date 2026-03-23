@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 
 from claude_remember_me.db import get_connection, init_db
 from claude_remember_me.embedder import Embedder
+from claude_remember_me.models import SearchResult
 from claude_remember_me.search import hybrid_search
 
 mcp = FastMCP("claude-remember-me")
@@ -29,7 +30,7 @@ def _get_embedder():
     return _embedder
 
 
-async def do_recall(query: str, limit: int = 5, *, conn=None, embedder=None) -> list[dict]:
+async def do_recall(query: str, limit: int = 5, *, conn=None, embedder=None) -> list[SearchResult]:
     """recall のコアロジック（テスト可能にするため分離）"""
     if conn is None:
         conn = _get_conn()
@@ -55,11 +56,11 @@ async def recall(query: str, limit: int = 5) -> str:
     parts = []
     for i, r in enumerate(results, 1):
         parts.append(
-            f"--- Memory {i} (score: {r['score']}) ---\n"
-            f"Project: {r.get('project_path', 'unknown')}\n"
-            f"Date: {r.get('created_at', 'unknown')}\n"
-            f"User: {r['user_message'][:500]}\n"
-            f"Assistant: {r['assistant_message'][:500]}"
+            f"--- Memory {i} (score: {r.score}) ---\n"
+            f"Project: {r.memory.project_path or 'unknown'}\n"
+            f"Date: {r.memory.created_at or 'unknown'}\n"
+            f"User: {r.memory.user_message[:500]}\n"
+            f"Assistant: {r.memory.assistant_message[:500]}"
         )
     return "\n\n".join(parts)
 

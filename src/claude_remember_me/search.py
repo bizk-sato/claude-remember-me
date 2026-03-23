@@ -6,6 +6,7 @@ import sqlite3
 
 from sqlite_vec import serialize_float32
 
+from claude_remember_me.models import Memory, SearchResult
 from claude_remember_me.ranking import apply_time_decay, rrf_fusion
 
 
@@ -69,19 +70,22 @@ def hybrid_search(
     query: str,
     query_embedding: list[float],
     limit: int = 5,
-) -> list[dict]:
+) -> list[SearchResult]:
     """ハイブリッド検索: FTS5 + ベクトル → RRF → 時間減衰 → 上位N件"""
     fts_results = search_fts(conn, query, limit=50)
     vec_results = search_vec(conn, query_embedding, limit=50)
     fused = rrf_fusion(fts_results, vec_results)
     decayed = apply_time_decay(fused)
-    return [
-        {
-            "user_message": r["user_message"],
-            "assistant_message": r["assistant_message"],
-            "project_path": r.get("project_path"),
-            "created_at": r.get("created_at"),
-            "score": round(r["final_score"], 4),
-        }
-        for r in decayed[:limit]
-    ]
+    results = []
+    for r in decayed[:limit]:
+        memory = Memory(
+            id=r["id"],
+            session_id=r.get("session_id", ""),
+            chunk_index=r.get("chunk_index", 0),
+            user_message=r["user_message"],
+            assistant_message=r["assistant_message"],
+            project_path=r.get("project_path"),
+            created_at=r.get("created_at", ""),
+        )
+        results.append(SearchResult(memory=memory, score=round(r["final_score"], 4)))
+    return results

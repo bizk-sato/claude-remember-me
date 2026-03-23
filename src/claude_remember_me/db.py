@@ -8,6 +8,8 @@ from pathlib import Path
 import sqlite_vec
 from sqlite_vec import serialize_float32
 
+from claude_remember_me.models import Memory
+
 DEFAULT_DB_PATH = Path.home() / ".claude" / "claude-remember-me" / "data" / "memory.db"
 
 SCHEMA_SQL = """
@@ -50,6 +52,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS memories_vec USING vec0(
     embedding FLOAT[768] distance_metric=cosine
 );
 """
+
+
+def _row_to_memory(row: tuple) -> Memory:
+    """Convert a DB row (id, session_id, chunk_index, user_message, assistant_message, project_path, created_at) to a Memory object."""
+    return Memory(
+        id=row[0],
+        session_id=row[1],
+        chunk_index=row[2],
+        user_message=row[3],
+        assistant_message=row[4],
+        project_path=row[5],
+        created_at=row[6],
+    )
 
 
 def get_connection(db_path: Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
