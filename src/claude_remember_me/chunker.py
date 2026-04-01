@@ -74,6 +74,9 @@ def parse_transcript(jsonl_text: str) -> list[QAPair]:
             user_type = obj.get("userType")
             if user_type is not None and user_type != "external":
                 continue
+            # Skip meta messages (skill expansions, system context injections)
+            if obj.get("isMeta"):
+                continue
             # 新しいユーザーメッセージが来たら、前の Q&A ペアを flush
             _flush()
             current_user = text

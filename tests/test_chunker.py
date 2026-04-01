@@ -55,6 +55,46 @@ def test_parse_user_content_as_list():
     assert pairs[0].user_message == "list content"
 
 
+def test_skips_meta_messages():
+    """isMeta: True のメッセージ（スキル展開等）はスキップする"""
+    jsonl = _make_jsonl(
+        {
+            "type": "user",
+            "message": {"role": "user", "content": "real question"},
+            "sessionId": "s1",
+            "cwd": "/tmp",
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "real answer"}],
+            },
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": "Base directory for this skill: /path/to/skill\n# Brainstorming",
+            },
+            "isMeta": True,
+            "userType": "external",
+            "sessionId": "s1",
+            "cwd": "/tmp",
+        },
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "skill response"}],
+            },
+        },
+    )
+    pairs = parse_transcript(jsonl)
+    assert len(pairs) == 1
+    assert pairs[0].user_message == "real question"
+
+
 def test_skips_non_user_assistant_types():
     jsonl = _make_jsonl(
         {"type": "progress", "data": {"type": "hook_progress"}},

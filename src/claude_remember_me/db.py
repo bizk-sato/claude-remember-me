@@ -53,6 +53,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS memories_vec USING vec0(
 );
 """
 
+VEC_TRIGGER_SQL = """
+CREATE TRIGGER IF NOT EXISTS memories_ad_vec AFTER DELETE ON memories BEGIN
+    DELETE FROM memories_vec WHERE id = old.id;
+END;
+"""
+
 
 def _row_to_memory(row: tuple) -> Memory:
     """Convert a DB row (id, session_id, chunk_index, user_message, assistant_message, project_path, created_at) to a Memory object."""
@@ -79,6 +85,7 @@ def get_connection(db_path: Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
     conn.execute(VEC_TABLE_SQL)
+    conn.execute(VEC_TRIGGER_SQL)
     conn.commit()
 
 
