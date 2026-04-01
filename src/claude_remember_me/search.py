@@ -20,6 +20,9 @@ def _sanitize_fts_query(query: str) -> str:
 
 def search_fts(conn: sqlite3.Connection, query: str, limit: int = 50) -> list[dict]:
     """FTS5 trigram キーワード検索"""
+    sanitized = _sanitize_fts_query(query)
+    if sanitized == '""':
+        return []
     rows = conn.execute(
         """SELECT m.id, m.user_message, m.assistant_message, m.project_path,
                   m.created_at, m.session_id
@@ -28,7 +31,7 @@ def search_fts(conn: sqlite3.Connection, query: str, limit: int = 50) -> list[di
            WHERE memories_fts MATCH ?
            ORDER BY rank
            LIMIT ?""",
-        (_sanitize_fts_query(query), limit),
+        (sanitized, limit),
     ).fetchall()
     results = []
     for rank_idx, row in enumerate(rows):

@@ -80,7 +80,7 @@ def main():
 
     saved = run_ingest(session_id, transcript_path)
     if saved > 0:
-        print(f"claude-remember-me: saved {saved} new memories")
+        print(json.dumps({"systemMessage": f"claude-remember-me: saved {saved} new memories"}))
 
 
 if __name__ == "__main__":

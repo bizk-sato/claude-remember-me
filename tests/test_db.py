@@ -48,6 +48,34 @@ def test_insert_duplicate_is_ignored(db_conn):
     assert count == 1
 
 
+def test_delete_memory_cascades_to_vec(db_conn):
+    """memories 削除時に memories_vec も連動削除される"""
+    init_db(db_conn)
+    embedding = [0.1] * 768
+    insert_memory(
+        db_conn,
+        session_id="sess-del",
+        chunk_index=0,
+        user_message="to be deleted",
+        assistant_message="response",
+        project_path=None,
+        embedding=embedding,
+    )
+    db_conn.commit()
+    row_id = db_conn.execute(
+        "SELECT id FROM memories WHERE session_id='sess-del'"
+    ).fetchone()[0]
+    assert db_conn.execute(
+        "SELECT COUNT(*) FROM memories_vec WHERE id=?", (row_id,)
+    ).fetchone()[0] == 1
+
+    db_conn.execute("DELETE FROM memories WHERE id=?", (row_id,))
+    db_conn.commit()
+    assert db_conn.execute(
+        "SELECT COUNT(*) FROM memories_vec WHERE id=?", (row_id,)
+    ).fetchone()[0] == 0
+
+
 def test_get_last_chunk_index_returns_negative_one_for_new_session(db_conn):
     init_db(db_conn)
     assert get_last_chunk_index(db_conn, "new-session") == -1
