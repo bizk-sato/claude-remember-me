@@ -10,6 +10,14 @@ from claude_remember_me.models import Memory, SearchResult
 from claude_remember_me.ranking import apply_time_decay, rrf_fusion
 
 
+def _sanitize_fts_query(query: str) -> str:
+    """FTS5クエリ用にサニタイズする。ダブルクォートを除去しフレーズ検索として扱う"""
+    sanitized = query.replace('"', "")
+    if not sanitized.strip():
+        return '""'
+    return f'"{sanitized}"'
+
+
 def search_fts(conn: sqlite3.Connection, query: str, limit: int = 50) -> list[dict]:
     """FTS5 trigram キーワード検索"""
     rows = conn.execute(
@@ -20,7 +28,7 @@ def search_fts(conn: sqlite3.Connection, query: str, limit: int = 50) -> list[di
            WHERE memories_fts MATCH ?
            ORDER BY rank
            LIMIT ?""",
-        (f'"{query}"', limit),
+        (_sanitize_fts_query(query), limit),
     ).fetchall()
     results = []
     for rank_idx, row in enumerate(rows):

@@ -47,7 +47,9 @@ def apply_time_decay(
             if created.tzinfo is None:
                 created = created.replace(tzinfo=timezone.utc)
         except (ValueError, TypeError):
-            created = now
+            decay = 0.1
+            decayed.append({**r, "final_score": r.get("score", 0.0) * decay})
+            continue
         days_elapsed = max((now - created).total_seconds() / 86400, 0)
         decay = pow(0.5, days_elapsed / half_life_days)
         decayed.append({**r, "final_score": r.get("score", 0.0) * decay})
