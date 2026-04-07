@@ -44,6 +44,14 @@ CREATE TABLE IF NOT EXISTS ingest_state (
     session_id TEXT PRIMARY KEY,
     last_chunk_index INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS recall_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    query TEXT NOT NULL,
+    limit_n INTEGER NOT NULL,
+    result_count INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 VEC_TABLE_SQL = """
@@ -119,6 +127,20 @@ def get_last_chunk_index(conn: sqlite3.Connection, session_id: str) -> int:
         (session_id,),
     ).fetchone()
     return row[0] if row else -1
+
+
+def insert_recall_log(
+    conn: sqlite3.Connection,
+    *,
+    query: str,
+    limit_n: int,
+    result_count: int,
+) -> None:
+    conn.execute(
+        "INSERT INTO recall_log (query, limit_n, result_count) VALUES (?, ?, ?)",
+        (query, limit_n, result_count),
+    )
+    conn.commit()
 
 
 def update_ingest_state(conn: sqlite3.Connection, session_id: str, last_chunk_index: int) -> None:

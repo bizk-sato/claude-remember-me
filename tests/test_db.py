@@ -1,4 +1,4 @@
-from claude_remember_me.db import init_db, insert_memory, get_last_chunk_index, update_ingest_state
+from claude_remember_me.db import init_db, insert_memory, get_last_chunk_index, update_ingest_state, insert_recall_log
 
 
 def test_init_db_creates_tables(db_conn):
@@ -89,3 +89,18 @@ def test_update_and_get_ingest_state(db_conn):
     update_ingest_state(db_conn, "sess-1", 10)
     db_conn.commit()
     assert get_last_chunk_index(db_conn, "sess-1") == 10
+
+
+def test_insert_recall_log(db_conn):
+    init_db(db_conn)
+    insert_recall_log(db_conn, query="Python型ヒント", limit_n=5, result_count=3)
+    row = db_conn.execute("SELECT query, limit_n, result_count FROM recall_log").fetchone()
+    assert row == ("Python型ヒント", 5, 3)
+
+
+def test_insert_recall_log_multiple(db_conn):
+    init_db(db_conn)
+    insert_recall_log(db_conn, query="query1", limit_n=5, result_count=2)
+    insert_recall_log(db_conn, query="query2", limit_n=10, result_count=0)
+    count = db_conn.execute("SELECT COUNT(*) FROM recall_log").fetchone()[0]
+    assert count == 2

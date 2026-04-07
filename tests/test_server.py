@@ -28,3 +28,27 @@ async def test_do_recall_returns_results():
     assert results[0].memory.user_message == "question"
     assert results[0].score == 0.85
     mock_embedder.embed.assert_called_once_with("test query", is_query=True)
+
+
+@pytest.mark.asyncio
+async def test_do_recall_logs_to_recall_log(db_conn):
+    from claude_remember_me.db import init_db
+
+    init_db(db_conn)
+    mock_embedder = MagicMock()
+    mock_embedder.embed.return_value = [0.1] * 768
+
+    fake_results = [
+        SearchResult(
+            memory=Memory(id=1, session_id="s1", chunk_index=0,
+                          user_message="q", assistant_message="a",
+                          project_path="/tmp", created_at="2026-01-01"),
+            score=0.9,
+        )
+    ]
+
+    with patch("claude_remember_me.server.hybrid_search", return_value=fake_results):
+        await do_recall("my query", 5, conn=db_conn, embedder=mock_embedder)
+
+    row = db_conn.execute("SELECT query, limit_n, result_count FROM recall_log").fetchone()
+    assert row == ("my query", 5, 1)

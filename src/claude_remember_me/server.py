@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from claude_remember_me.db import get_connection, init_db
+from claude_remember_me.db import get_connection, init_db, insert_recall_log
 from claude_remember_me.embedder import Embedder
 from claude_remember_me.models import SearchResult
 from claude_remember_me.search import hybrid_search
@@ -38,7 +38,11 @@ async def do_recall(query: str, limit: int = 5, *, conn=None, embedder=None) -> 
         embedder = _get_embedder()
 
     query_embedding = embedder.embed(query, is_query=True)
-    return hybrid_search(conn, query, query_embedding, limit=limit)
+    results = hybrid_search(conn, query, query_embedding, limit=limit)
+
+    insert_recall_log(conn, query=query, limit_n=limit, result_count=len(results))
+
+    return results
 
 
 @mcp.tool()
