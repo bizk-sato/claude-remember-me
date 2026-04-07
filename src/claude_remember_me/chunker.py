@@ -15,6 +15,19 @@ class QAPair:
     chunk_index: int
 
 
+# task-notification等のシステム生成メッセージをスキップするパターン
+_NOISE_PREFIXES = (
+    "<task-notification>",
+    "<system-reminder>",
+)
+
+
+def _is_noise(text: str) -> bool:
+    """システム生成のノイズメッセージかどうか判定する"""
+    stripped = text.lstrip()
+    return any(stripped.startswith(prefix) for prefix in _NOISE_PREFIXES)
+
+
 def _extract_text(content) -> str:
     """message.content からテキストを抽出する"""
     if isinstance(content, str):
@@ -76,6 +89,9 @@ def parse_transcript(jsonl_text: str) -> list[QAPair]:
                 continue
             # Skip meta messages (skill expansions, system context injections)
             if obj.get("isMeta"):
+                continue
+            # ノイズメッセージはスキップ
+            if _is_noise(text):
                 continue
             # 新しいユーザーメッセージが来たら、前の Q&A ペアを flush
             _flush()
