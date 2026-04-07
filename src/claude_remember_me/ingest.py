@@ -14,6 +14,12 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
+
+
+# ログファイルパス: ユーザー固有の一時ディレクトリを使用
+LOG_PATH = Path(tempfile.gettempdir()) / f"claude-remember-me-{os.getuid()}.log"
 
 
 def run_ingest(
@@ -24,8 +30,6 @@ def run_ingest(
     db_path: str | None = None,
 ) -> int:
     """Transcript を読み込み、差分チャンクを DB に保存する。保存件数を返す。"""
-    from pathlib import Path
-
     from claude_remember_me.chunker import parse_transcript
     from claude_remember_me.db import (
         DEFAULT_DB_PATH,
@@ -98,7 +102,6 @@ def _worker_main():
         db_path=db_path,
     )
     if saved > 0:
-        # ログファイルに記録（バックグラウンドなので stdout は見えない）
         print(f"claude-remember-me: saved {saved} new memories", file=sys.stderr)
 
 
@@ -128,18 +131,22 @@ def main():
     if db_path:
         cmd.extend(["--db-path", db_path])
 
+    log_file = open(LOG_PATH, "a")
     subprocess.Popen(
         cmd,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
-        stderr=open("/tmp/claude-remember-me.log", "a"),
+        stderr=log_file,
         start_new_session=True,
     )
+    log_file.close()
+
+    print(json.dumps({"systemMessage": "claude-remember-me: バックグラウンドで記憶を保存中..."}))
 
 
 if __name__ == "__main__":
-    # --worker フラグがある場合はワーカーモードで実行
-    if "--worker" in sys.argv:
+    # 第1引数が --worker の場合はワーカーモードで実行
+    if len(sys.argv) > 1 and sys.argv[1] == "--worker":
         _worker_main()
     else:
         main()
