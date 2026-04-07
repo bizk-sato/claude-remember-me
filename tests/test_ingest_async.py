@@ -59,6 +59,8 @@ class TestIngestAsyncMain:
 
         assert proc.returncode == 0, f"stderr: {proc.stderr}"
         assert elapsed < 2.0, f"main() took {elapsed:.1f}s — should return within 2s"
+        output = json.loads(proc.stdout)
+        assert "バックグラウンドで記憶を保存中" in output["systemMessage"]
 
     def test_main_with_empty_stdin_returns_immediately(self):
         """空のstdinでもエラーなく即座に返る"""
